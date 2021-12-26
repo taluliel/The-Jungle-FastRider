@@ -13,10 +13,10 @@ export const setSelctedRide = (ride) => {
     payload: ride,
   };
 };
-export const FastRiderAccessCode = (ride_PIN_details) => {
+export const FastRiderAccessCode = (ride_details, pin) => {
   return {
     type: ActionTypes.GET_ACCESS_CODE,
-    payload: ride_PIN_details,
+    payload: { ride_details, pin },
   };
 };
 export const signUser = (user) => {

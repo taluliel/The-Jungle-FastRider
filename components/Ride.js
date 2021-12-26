@@ -9,15 +9,21 @@ import {
   View,
   Image,
   SafeAreaView,
+  ActivityIndicator,
 } from "react-native";
 import { Card } from "react-native-elements";
 import { useDispatch, useSelector } from "react-redux";
-import { setRides, setSelctedRide } from "../redux/actions/actions";
+import { setRides, setSelctedRide, signUser } from "../redux/actions/actions";
+import { useFonts } from "expo-font";
 
 export default function RideComp(props) {
   const [openModal, setOpenModal] = useState(false);
   const ticket = useSelector((state) => state.allData.ticketDetails);
   const dispatch = useDispatch();
+  const [fontsLoaded] = useFonts({
+    "OpenSans-Regular": require("../assets/fonts/OpenSans-Regular.ttf"),
+    "OpenSans-Bold": require("../assets/fonts/OpenSans-Bold.ttf"),
+  });
 
   useEffect(() => {
     async function fetchData() {
@@ -31,7 +37,7 @@ export default function RideComp(props) {
   }, []);
 
   const getTime = () => {
-    let time = new Date(ticket.ride.return_time);
+    let time = new Date(ticket.ticket.ride.return_time);
     let hour = time.getHours();
     let minutes = time.getMinutes();
     minutes = minutes < 10 ? "0" + minutes : minutes;
@@ -40,59 +46,69 @@ export default function RideComp(props) {
   };
 
   const onCloseModal = () => {
+    console.log(ticket);
     setOpenModal(false);
     dispatch(setSelctedRide({}));
+    dispatch(signUser(ticket));
     props.closeModal(false);
   };
   return (
     <SafeAreaView>
-      <Modal
-        style={{ height: "100%", width: "100%" }}
-        visible={openModal}
-        onRequestClose={() => {
-          Alert.alert("Modal has been closed.");
-          setOpenModal(false);
-        }}
-      >
-        <View style={styles.centeredView}>
-          <View style={styles.confirmText}>
-            <Text style={styles.title}>The Jungle™ FastRider Service</Text>
-            <Image
-              style={[styles.ConfirmImage, { width: 30, height: 30 }]}
-              source={require("../assets/ico-04.png")}
-            />
-            <Text style={styles.modalText}>
-              Thank you for using the The Jungle™ FastRider ticket system - your
-              access code is now ready!
-            </Text>
-          </View>
-
-          <View style={styles.card}>
-            <Card containerStyle={styles.ride}>
-              <View
-                style={{
-                  borderBottomColor: ticket.ride.zone.color,
-                  borderBottomWidth: 5,
-                }}
+      {fontsLoaded ? (
+        <Modal
+          style={{ height: "100%", width: "100%" }}
+          visible={openModal}
+          onRequestClose={() => {
+            Alert.alert("Modal has been closed.");
+            setOpenModal(false);
+          }}
+        >
+          <View style={styles.centeredView}>
+            <View style={styles.confirmText}>
+              <Text style={styles.title}>The Jungle™ FastRider Service</Text>
+              <Image
+                style={[styles.ConfirmImage, { width: 30, height: 30 }]}
+                source={require("../assets/ico-04.png")}
               />
-              <View Style={styles.zoneDetails}>
-                <Text style={styles.zone}>{ticket.ride.zone.name}</Text>
-                <Text style={styles.rideName}>{ticket.ride.name}</Text>
-              </View>
-              <View style={styles.detailsArea}>
-                <Text style={styles.detailsText}>Return At</Text>
-                <Text style={styles.ticketDetails}>{getTime()}</Text>
-                <Text style={styles.detailsText}>Use Access Code</Text>
-                <Text style={styles.ticketDetails}>{ticket.access_code}</Text>
-              </View>
-            </Card>
+              <Text style={styles.modalText}>
+                Thank you for using the The Jungle™ FastRider ticket system -
+                your access code is now ready!
+              </Text>
+            </View>
 
-            <Pressable style={[styles.button]} onPress={onCloseModal}>
-              <Text style={styles.textStyle}>Close</Text>
-            </Pressable>
+            <View style={styles.card}>
+              <Card containerStyle={styles.ride}>
+                <View
+                  style={{
+                    borderBottomColor: ticket.ticket.ride.zone.color,
+                    borderBottomWidth: 5,
+                  }}
+                />
+                <View Style={styles.zoneDetails}>
+                  <Text style={styles.zone}>
+                    {ticket.ticket.ride.zone.name}
+                  </Text>
+                  <Text style={styles.rideName}>{ticket.ticket.ride.name}</Text>
+                </View>
+                <View style={styles.detailsArea}>
+                  <Text style={styles.detailsText}>Return At</Text>
+                  <Text style={styles.ticketDetails}>{getTime()}</Text>
+                  <Text style={styles.detailsText}>Use Access Code</Text>
+                  <Text style={styles.ticketDetails}>
+                    {ticket.ticket.access_code}
+                  </Text>
+                </View>
+              </Card>
+
+              <Pressable style={[styles.button]} onPress={onCloseModal}>
+                <Text style={styles.textStyle}>Close</Text>
+              </Pressable>
+            </View>
           </View>
-        </View>
-      </Modal>
+        </Modal>
+      ) : (
+        <ActivityIndicator size="small" color="white" />
+      )}
     </SafeAreaView>
   );
 }
@@ -109,17 +125,19 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: "10%",
     alignItems: "center",
+    fontFamily: "OpenSans-Regular",
   },
   title: {
     fontSize: 18,
     color: "white",
-    fontWeight: "bold",
+    fontFamily: "OpenSans-Bold",
     marginBottom: 20,
   },
   modalText: {
     width: "40%",
     textAlign: "center",
     color: "#656565",
+    fontFamily: "OpenSans-Bold",
   },
   button: {
     position: "absolute",
@@ -158,15 +176,16 @@ const styles = StyleSheet.create({
     color: "#656565",
     textAlign: "right",
     fontSize: 12,
+    fontFamily: "OpenSans-Bold",
   },
   rideName: {
     position: "absolute",
-    width: "26%",
+    width: "50%",
     margin: 5,
     textAlign: "left",
     top: 0,
     color: "white",
-    fontWeight: "bold",
+    fontFamily: "OpenSans-Bold",
     fontSize: 12,
   },
   detailsArea: {
@@ -179,12 +198,13 @@ const styles = StyleSheet.create({
     textAlign: "right",
     fontSize: 16,
     textAlign: "center",
+    fontFamily: "OpenSans-Regular",
   },
   ticketDetails: {
     margin: 5,
     textAlign: "left",
     color: "white",
-    fontWeight: "bold",
+    fontFamily: "OpenSans-Bold",
     fontSize: 18,
     textAlign: "center",
     paddingBottom: 5,

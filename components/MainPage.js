@@ -12,24 +12,33 @@ import {
   Pressable,
   Dimensions,
   Modal,
+  ActivityIndicator,
 } from "react-native";
 import RidesComp from "./Rides";
 import RideComp from "./Ride";
 import { useSelector, useDispatch } from "react-redux";
 import { setRides, FastRiderAccessCode } from "../redux/actions/actions";
+import { useFonts } from "expo-font";
 
 export default function MainComp() {
   const [PIN, setPIN] = useState("");
   const ride = useSelector((state) => state.allData.selectedRide);
+  const users = useSelector((state) => state.users);
   const [InvalidPinMsg, setInvalidPinMsg] = useState("");
   const [ShowConfirmation, setShowConfirmation] = useState(false);
   const [ShowSubmit, setShowSubmit] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [cantAssignModal, setCantAssignModal] = useState(false);
+  const [modalText, setModalText] = useState("");
   const dispatch = useDispatch();
   const screenWidth = Dimensions.get("window").width;
   const screenHeigth = Dimensions.get("window").height;
   const [currentDate, setCurrentDate] = useState("");
+
+  const [fontsLoaded] = useFonts({
+    "OpenSans-Regular": require("../assets/fonts/OpenSans-Regular.ttf"),
+    "OpenSans-Bold": require("../assets/fonts/OpenSans-Bold.ttf"),
+  });
 
   useEffect(() => {
     async function fetchData() {
@@ -45,11 +54,17 @@ export default function MainComp() {
     const startTime = "09:00:00";
     const endTime = "19:00:00";
     let date = new Date();
-    let returnTime = getTime(date);
-    setCurrentDate(returnTime);
-    returnTime < endTime && returnTime > startTime
-      ? setModalVisible(false)
-      : setModalVisible(true);
+    let currentTime = getTime(date);
+    setCurrentDate(currentTime);
+    if (currentTime < endTime && currentTime > startTime) {
+      setModalVisible(false);
+      setModalText("");
+    } else {
+      setModalVisible(true);
+      setModalText(
+        "FastRider tickets can not be assign outside of park working hours. \n\n Please try between 09:00-19:00."
+      );
+    }
   }, []);
 
   const getTime = (date) => {
@@ -70,8 +85,22 @@ export default function MainComp() {
       try {
         setInvalidPinMsg("");
         let checkIfPinIsValid = checkPINnumber(PIN);
-
+        console.log(PIN, ride);
         if (checkIfPinIsValid) {
+          const found = users.users.find((user) => user.PIN === PIN);
+          console.log("find", found);
+          if (found) {
+            let returnTimeTicket = getTime(found.ticket.ride.return_time);
+            if (currentDate < returnTimeTicket) {
+              setModalText(
+                "Only one FastRider ticket can be held at any given time.\n\n Please try after your ride at " +
+                  returnTimeTicket
+              );
+              setModalVisible(true);
+              setCantAssignModal(true);
+            }
+          }
+
           let rideDetails = {
             pin: PIN,
             ride_id: ride.id,
@@ -82,7 +111,7 @@ export default function MainComp() {
             rideDetails
           );
 
-          dispatch(FastRiderAccessCode(resp.data));
+          dispatch(FastRiderAccessCode(resp.data, PIN));
           setShowConfirmation(true);
           setPIN("");
           setShowSubmit(false);
@@ -138,170 +167,163 @@ export default function MainComp() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View
-        style={{
-          height: screenHeigth,
-          width: screenWidth,
-        }}
-      >
-        <ScrollView
-          style={{ flex: 1 }}
-          contentContainerStyle={{
-            flexGrow: 1,
-            height: screenWidth > 900 ? screenHeigth : 2300,
+      {fontsLoaded ? (
+        <View
+          style={{
+            height: screenHeigth,
+            width: screenWidth,
           }}
-          onScroll={({ nativeEvent }) => {
-            if (
-              nativeEvent.contentOffset.y === 0 &&
-              PIN !== "" &&
-              Object.keys(ride).length !== 0
-            ) {
-              setShowSubmit(true);
-            } else {
-              setShowSubmit(false);
-            }
-          }}
-          scrollEventThrottle={400}
         >
-          <Modal
-            style={{ height: "100%", width: "100%" }}
-            visible={modalVisible}
+          <ScrollView
+            style={{ flex: 1 }}
+            contentContainerStyle={{
+              flexGrow: 1,
+              height: screenWidth > 900 ? screenHeigth : 2400,
+            }}
+            onScroll={({ nativeEvent }) => {
+              if (
+                nativeEvent.contentOffset.y === 0 &&
+                PIN !== "" &&
+                Object.keys(ride).length !== 0
+              ) {
+                setShowSubmit(true);
+              } else {
+                setShowSubmit(false);
+              }
+            }}
+            scrollEventThrottle={400}
           >
-            <View style={styles.centeredView}>
-              <View style={styles.modalTime}>
-                <Image
-                  style={{ width: 20, height: 20 }}
-                  source={require("../assets/ico-03.png")}
-                />
-                <Text style={styles.time}>{currentDate}</Text>
+            <Modal
+              style={{ height: "100%", width: "100%" }}
+              visible={modalVisible}
+            >
+              <View style={styles.centeredView}>
+                <View style={styles.modalTime}>
+                  <Image
+                    style={{ width: 20, height: 20 }}
+                    source={require("../assets/ico-03.png")}
+                  />
+                  <Text style={styles.time}>{currentDate}</Text>
+                </View>
+                <Text style={styles.modalText}>{modalText}</Text>
+                {cantAssignModal && (
+                  <Pressable
+                    style={styles.CloseButton}
+                    onPress={() => {
+                      setModalVisible(false);
+                      setCantAssignModal(false);
+                    }}
+                  >
+                    <Text style={{ fontFamily: "OpenSans-Regular" }}>
+                      Close
+                    </Text>
+                  </Pressable>
+                )}
               </View>
-              <Text style={styles.modalText}>
-                FastRider tickets can not be assign outside of park working
-                hours.
-                {"\n\n"}Please try between 09:00-19:00.
-              </Text>
-            </View>
-          </Modal>
-          <Modal
-            style={{ height: "100%", width: "100%" }}
-            visible={cantAssignModal}
-          >
-            <View style={styles.centeredView}>
-              <View style={styles.modalTime}>
-                <Image
-                  style={{ width: 20, height: 20 }}
-                  source={require("../assets/ico-03.png")}
+            </Modal>
+            {ShowConfirmation && (
+              <View>
+                <RideComp
+                  modalVisible={ShowConfirmation}
+                  closeModal={(data) => setShowConfirmation(data)}
                 />
-                <Text style={styles.time}>{currentDate}</Text>
               </View>
-              <Text style={styles.modalText}>
-                Only one FastRider ticket can be held at any given time.
-                {"\n\n"}Please try after {ride.return_time} .
-              </Text>
-              <Pressable
-                style={[styles.button]}
-                onPress={() => setCantAssignModal(false)}
-              >
-                <Text style={styles.textStyle}>Close</Text>
-              </Pressable>
-            </View>
-          </Modal>
-          {ShowConfirmation && (
-            <View>
-              <RideComp
-                modalVisible={ShowConfirmation}
-                closeModal={(data) => setShowConfirmation(data)}
-              />
-            </View>
-          )}
-          <View
-            style={
-              screenWidth > 900
-                ? styles.InstructionsContainerWeb
-                : styles.InstructionsContainer
-            }
-          >
-            <Text style={styles.title}>The Jungle™ FastRider Service</Text>
-            <View style={styles.Instructions}>
-              <Image
-                style={styles.InstructionsImage}
-                source={require("../assets/ico-01.png")}
-              />
-              <Text style={styles.InstructionsText}>
-                Enter your park ticket #PIN number, then select the desire ride
-                while noting the stated return time
-              </Text>
-            </View>
-            <View style={styles.Instructions}>
-              <Image
-                style={styles.InstructionsImage}
-                source={require("../assets/ico-02.png")}
-              />
-              <Text style={styles.InstructionsText}>
-                Press 'submit' to confirm and retrieve your access code
-              </Text>
-            </View>
-            <View style={styles.Instructions}>
-              <Image
-                style={styles.InstructionsImage}
-                source={require("../assets/ico-03.png")}
-              />
-              <Text style={styles.InstructionsText}>
-                When the time comes, use the special FastRider line to cut out a
-                considerable wait time
-              </Text>
-            </View>
-            <Text style={styles.InvalidPinMsg}>{InvalidPinMsg}</Text>
+            )}
             <View
               style={
                 screenWidth > 900
-                  ? styles.inputContainerWeb
-                  : styles.inputContainer
+                  ? styles.InstructionsContainerWeb
+                  : styles.InstructionsContainer
               }
             >
-              <TextInput
-                style={[
-                  styles.input,
-                  { width: screenWidth > 900 ? "70%" : "92%" },
-                ]}
-                placeholder="#PIN"
-                value={PIN}
-                onChangeText={(text) => setPIN(text)}
-              />
-
-              {screenWidth > 900 && (
-                <Pressable
+              <Text style={styles.title}>The Jungle™ FastRider Service</Text>
+              <View style={styles.Instructions}>
+                <Image
+                  style={styles.InstructionsImage}
+                  source={require("../assets/ico-01.png")}
+                />
+                <Text style={styles.InstructionsText}>
+                  Enter your park ticket #PIN number, then select the desire
+                  ride while noting the stated return time
+                </Text>
+              </View>
+              <View style={styles.Instructions}>
+                <Image
+                  style={styles.InstructionsImage}
+                  source={require("../assets/ico-02.png")}
+                />
+                <Text style={styles.InstructionsText}>
+                  Press 'submit' to confirm and retrieve your access code
+                </Text>
+              </View>
+              <View style={styles.Instructions}>
+                <Image
+                  style={styles.InstructionsImage}
+                  source={require("../assets/ico-03.png")}
+                />
+                <Text style={styles.InstructionsText}>
+                  When the time comes, use the special FastRider line to cut out
+                  a considerable wait time
+                </Text>
+              </View>
+              <Text style={styles.InvalidPinMsg}>{InvalidPinMsg}</Text>
+              <View
+                style={
+                  screenWidth > 900
+                    ? styles.inputContainerWeb
+                    : styles.inputContainer
+                }
+              >
+                <TextInput
                   style={[
-                    styles.SubmitButtonWeb,
-                    {
-                      opacity:
-                        PIN === "" && Object.keys(ride).length === 0 ? 0.7 : 1,
-                    },
+                    styles.input,
+                    { width: screenWidth > 900 ? "70%" : "92%" },
                   ]}
-                  onPress={getAccessCode}
-                  disabled={
-                    PIN === "" && Object.keys(ride).length === 0 ? true : false
-                  }
-                >
+                  placeholder="#PIN"
+                  value={PIN}
+                  onChangeText={(text) => setPIN(text)}
+                />
+
+                {screenWidth > 900 && (
+                  <Pressable
+                    style={[
+                      styles.SubmitButtonWeb,
+                      {
+                        opacity:
+                          PIN === "" && Object.keys(ride).length === 0
+                            ? 0.7
+                            : 1,
+                      },
+                    ]}
+                    onPress={getAccessCode}
+                    disabled={
+                      PIN === "" && Object.keys(ride).length === 0
+                        ? true
+                        : false
+                    }
+                  >
+                    <Text style={styles.ButtonInputText}>SUBMIT</Text>
+                  </Pressable>
+                )}
+              </View>
+            </View>
+
+            <View style={screenWidth > 900 ? styles.RidesWeb : styles.Rides}>
+              <RidesComp />
+            </View>
+            {ShowSubmit && screenWidth < 900 && (
+              <View style={[styles.SubmitButton]}>
+                <Pressable style={styles.button} onPress={getAccessCode}>
                   <Text style={styles.ButtonInputText}>SUBMIT</Text>
                 </Pressable>
-              )}
-            </View>
-          </View>
-
-          <View style={screenWidth > 900 ? styles.RidesWeb : styles.Rides}>
-            <RidesComp />
-          </View>
-          {ShowSubmit && screenWidth < 900 && (
-            <View style={[styles.SubmitButton]}>
-              <Pressable style={styles.button} onPress={getAccessCode}>
-                <Text style={styles.ButtonInputText}>SUBMIT</Text>
-              </Pressable>
-            </View>
-          )}
-          <StatusBar style="auto" />
-        </ScrollView>
-      </View>
+              </View>
+            )}
+            <StatusBar style="auto" />
+          </ScrollView>
+        </View>
+      ) : (
+        <ActivityIndicator size="small" color="white" />
+      )}
     </SafeAreaView>
   );
 }
@@ -318,13 +340,14 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     color: "white",
-    fontWeight: "bold",
     margin: 10,
+    fontFamily: "OpenSans-Bold",
   },
   InstructionsContainer: {
     position: "absolute",
     alignItems: "center",
-    top: "2%",
+    alignContent: "center",
+    top: "3%",
     width: "100%",
   },
   InstructionsContainerWeb: {
@@ -337,22 +360,22 @@ const styles = StyleSheet.create({
   InstructionsImage: {
     width: 45,
     height: 45,
-    backgroundColor: "#4d4c4c",
+    backgroundColor: "#333333",
     borderRadius: 50,
   },
   Instructions: {
     position: "relative",
-    width: "70%",
+    width: "60%",
     display: "flex",
     flexDirection: "column",
     flexWrap: "wrap",
     alignItems: "center",
-    margin: 7,
   },
   InstructionsText: {
     textAlign: "center",
     color: "#656565",
     margin: 10,
+    fontFamily: "OpenSans-Regular",
   },
   input: {
     backgroundColor: "white",
@@ -366,6 +389,7 @@ const styles = StyleSheet.create({
     textAlign: "left",
     color: "#8b0000",
     fontSize: 14,
+    fontFamily: "OpenSans-Regular",
   },
   inputContainer: {
     width: "100%",
@@ -387,6 +411,9 @@ const styles = StyleSheet.create({
     top: "30.5%",
     alignContent: "center",
     width: "100%",
+    borderColor: "gray",
+    borderWidth: 3,
+    borderRadius: 10,
   },
   SubmitButtonWeb: {
     position: "absolute",
@@ -402,16 +429,23 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: 20,
   },
-
+  CloseButton: {
+    width: "30%",
+    borderRadius: 20,
+    padding: 10,
+    elevation: 2,
+    alignItems: "center",
+    backgroundColor: "#4c4c4b",
+  },
   ButtonInputText: {
     color: "white",
     fontSize: 22,
     textAlign: "center",
-    fontWeight: "bold",
+    fontFamily: "OpenSans-Bold",
   },
   Rides: {
     position: "absolute",
-    top: "23%",
+    top: "24%",
   },
   RidesWeb: {
     position: "absolute",
@@ -432,7 +466,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     textAlign: "center",
     color: "white",
-    fontWeight: "bold",
+    fontFamily: "OpenSans-Bold",
     padding: 20,
     margin: 30,
     width: "80%",
@@ -448,7 +482,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     textAlign: "center",
     color: "white",
-    fontWeight: "bold",
+    fontFamily: "OpenSans-Bold",
     marginLeft: 5,
   },
 });

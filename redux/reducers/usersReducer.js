@@ -6,9 +6,11 @@ const initialState = {
 
 export const usersReducers = (state = initialState, { type, payload }) => {
   switch (type) {
-    case ActionTypes.SIGN_USER:
-      let allUsers = state.users.push(payload);
+    case ActionTypes.SIGN_USER: {
+      let allUsers = initialState.users;
+      allUsers.push(payload);
       return { ...state, users: allUsers };
+    }
 
     default:
       return state;

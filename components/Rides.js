@@ -7,10 +7,12 @@ import {
   TouchableOpacity,
   Image,
   Dimensions,
+  ActivityIndicator,
 } from "react-native";
 import { Card } from "react-native-elements";
 import { useSelector, useDispatch } from "react-redux";
 import { setSelctedRide } from "../redux/actions/actions";
+import { useFonts } from "expo-font";
 
 export default function RidesComp() {
   const rides = useSelector((state) => state.allData.rides);
@@ -20,6 +22,10 @@ export default function RidesComp() {
   const [backgroundColor, setBackgroundColor] = useState({
     id: "",
     color: "#373737",
+  });
+  const [fontsLoaded] = useFonts({
+    "OpenSans-Regular": require("../assets/fonts/OpenSans-Regular.ttf"),
+    "OpenSans-ExtraBold": require("../assets/fonts/OpenSans-ExtraBold.ttf"),
   });
 
   const updateBackgroundColor = (id) => {
@@ -52,61 +58,67 @@ export default function RidesComp() {
   };
   return (
     <SafeAreaView>
-      <View style={styles.container}>
-        {rides &&
-          rides.map((ride) => {
-            return (
-              <TouchableOpacity
-                key={ride.id}
-                style={{
-                  width: screenWidth > 900 ? "25%" : "50%",
-                  opacity: ride.remaining_tickets === 0 ? 0.6 : 1,
-                }}
-                onPress={() => onPressCard(ride)}
-                disabled={ride.remaining_tickets === 0 ? true : false}
-              >
-                <Card
-                  containerStyle={[
-                    styles.ride,
-                    {
-                      backgroundColor: updateBackgroundColor(ride.id),
-                    },
-                  ]}
+      {fontsLoaded ? (
+        <View style={styles.container}>
+          {rides &&
+            rides.map((ride) => {
+              return (
+                <TouchableOpacity
+                  key={ride.id}
+                  style={{
+                    width: screenWidth > 900 ? "25%" : "50%",
+                    opacity: ride.remaining_tickets === 0 ? 0.6 : 1,
+                  }}
+                  onPress={() => onPressCard(ride)}
+                  disabled={ride.remaining_tickets === 0 ? true : false}
                 >
-                  <View
-                    style={{
-                      borderBottomColor: ride.zone.color,
-                      borderBottomWidth: 5,
-                    }}
-                  />
-                  <View>
-                    <Text style={styles.zone}>{ride.zone.name}</Text>
-                    <Text style={styles.rideName}>{ride.name}</Text>
-                  </View>
-                  <View style={[styles.detailsContainer]}>
-                    <View style={styles.returnTimeContainer}>
-                      <Image
-                        style={styles.iconImage}
-                        source={require("../assets/ico-g-03.png")}
-                      />
-                      <Text style={styles.text}>
-                        {getTime(ride.return_time)}
-                      </Text>
+                  <Card
+                    containerStyle={[
+                      styles.ride,
+                      {
+                        backgroundColor: updateBackgroundColor(ride.id),
+                      },
+                    ]}
+                  >
+                    <View
+                      style={{
+                        borderBottomColor: ride.zone.color,
+                        borderBottomWidth: 5,
+                      }}
+                    />
+                    <View>
+                      <Text style={styles.zone}>{ride.zone.name}</Text>
+                      <Text style={styles.rideName}>{ride.name}</Text>
                     </View>
+                    <View style={[styles.detailsContainer]}>
+                      <View style={styles.returnTimeContainer}>
+                        <Image
+                          style={styles.iconImage}
+                          source={require("../assets/ico-g-03.png")}
+                        />
+                        <Text style={styles.text}>
+                          {getTime(ride.return_time)}
+                        </Text>
+                      </View>
 
-                    <View style={styles.remainingTicketsContainer}>
-                      <Image
-                        style={[styles.iconImage]}
-                        source={require("../assets/ico-g-01.png")}
-                      />
-                      <Text style={styles.text}>{ride.remaining_tickets}</Text>
+                      <View style={styles.remainingTicketsContainer}>
+                        <Image
+                          style={[styles.iconImage]}
+                          source={require("../assets/ico-g-01.png")}
+                        />
+                        <Text style={styles.text}>
+                          {ride.remaining_tickets}
+                        </Text>
+                      </View>
                     </View>
-                  </View>
-                </Card>
-              </TouchableOpacity>
-            );
-          })}
-      </View>
+                  </Card>
+                </TouchableOpacity>
+              );
+            })}
+        </View>
+      ) : (
+        <ActivityIndicator size="small" color="white" />
+      )}
     </SafeAreaView>
   );
 }
@@ -130,13 +142,14 @@ const styles = StyleSheet.create({
   },
   rideName: {
     margin: 10,
-    fontSize: 22,
+    fontSize: 20,
     color: "white",
-    fontWeight: "bold",
     textAlign: "center",
+    fontFamily: "OpenSans-ExtraBold",
   },
   text: {
     color: "#656565",
+    fontFamily: "OpenSans-Regular",
   },
   detailsContainer: {
     position: "absolute",
