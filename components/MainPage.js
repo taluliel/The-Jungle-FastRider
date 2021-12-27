@@ -50,9 +50,9 @@ export default function MainComp() {
     fetchData();
   }, []);
 
-  useEffect(() => {
-    setPIN(ticket.PIN);
-  }, [ticket]);
+  //   useEffect(() => {
+  //     setPIN(ticket.PIN);
+  //   }, [ticket]);
 
   useEffect(() => {
     const startTime = "09:00";
