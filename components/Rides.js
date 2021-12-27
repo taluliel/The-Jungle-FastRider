@@ -38,7 +38,6 @@ export default function RidesComp() {
       return "#373737";
     }
   };
-
   const onPressCard = (ride) => {
     if (backgroundColor.id === ride.id) {
       setBackgroundColor({ id: "", color: "#373737" });
@@ -53,6 +52,7 @@ export default function RidesComp() {
     let hour = time.getHours();
     let minutes = time.getMinutes();
     minutes = minutes < 10 ? "0" + minutes : minutes;
+    hour = hour < 10 ? "0" + hour : hour;
     let returnTime = hour + ":" + minutes;
     return returnTime;
   };

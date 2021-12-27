@@ -10,6 +10,7 @@ import {
   Image,
   SafeAreaView,
   ActivityIndicator,
+  Dimensions,
 } from "react-native";
 import { Card } from "react-native-elements";
 import { useDispatch, useSelector } from "react-redux";
@@ -20,6 +21,7 @@ export default function RideComp(props) {
   const [openModal, setOpenModal] = useState(false);
   const ticket = useSelector((state) => state.allData.ticketDetails);
   const dispatch = useDispatch();
+  const screenWidth = Dimensions.get("window").width;
   const [fontsLoaded] = useFonts({
     "OpenSans-Regular": require("../assets/fonts/OpenSans-Regular.ttf"),
     "OpenSans-Bold": require("../assets/fonts/OpenSans-Bold.ttf"),
@@ -46,7 +48,6 @@ export default function RideComp(props) {
   };
 
   const onCloseModal = () => {
-    console.log(ticket);
     setOpenModal(false);
     dispatch(setSelctedRide({}));
     dispatch(signUser(ticket));
@@ -76,8 +77,8 @@ export default function RideComp(props) {
               </Text>
             </View>
 
-            <View style={styles.card}>
-              <Card containerStyle={styles.ride}>
+            <View style={screenWidth > 900 ? styles.cardWeb : styles.card}>
+              <Card containerStyle={styles.rideCard}>
                 <View
                   style={{
                     borderBottomColor: ticket.ticket.ride.zone.color,
@@ -157,6 +158,12 @@ const styles = StyleSheet.create({
     height: "70%",
     top: "35%",
   },
+  cardWeb: {
+    position: "absolute",
+    width: "40%",
+    height: "70%",
+    top: "35%",
+  },
 
   ConfirmImage: {
     backgroundColor: "#4d4c4c",
@@ -165,7 +172,7 @@ const styles = StyleSheet.create({
     marginBottom: "5%",
     borderRadius: 50,
   },
-  ride: {
+  rideCard: {
     padding: 0,
     borderWidth: 0,
     backgroundColor: "#373737",

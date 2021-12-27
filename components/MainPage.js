@@ -23,6 +23,7 @@ import { useFonts } from "expo-font";
 export default function MainComp() {
   const [PIN, setPIN] = useState("");
   const ride = useSelector((state) => state.allData.selectedRide);
+  const ticket = useSelector((state) => state.allData.ticketDetails);
   const users = useSelector((state) => state.users);
   const [InvalidPinMsg, setInvalidPinMsg] = useState("");
   const [ShowConfirmation, setShowConfirmation] = useState(false);
@@ -30,15 +31,14 @@ export default function MainComp() {
   const [modalVisible, setModalVisible] = useState(false);
   const [cantAssignModal, setCantAssignModal] = useState(false);
   const [modalText, setModalText] = useState("");
-  const dispatch = useDispatch();
   const screenWidth = Dimensions.get("window").width;
   const screenHeigth = Dimensions.get("window").height;
   const [currentDate, setCurrentDate] = useState("");
-
   const [fontsLoaded] = useFonts({
     "OpenSans-Regular": require("../assets/fonts/OpenSans-Regular.ttf"),
     "OpenSans-Bold": require("../assets/fonts/OpenSans-Bold.ttf"),
   });
+  const dispatch = useDispatch();
 
   useEffect(() => {
     async function fetchData() {
@@ -51,16 +51,21 @@ export default function MainComp() {
   }, []);
 
   useEffect(() => {
-    const startTime = "09:00:00";
-    const endTime = "19:00:00";
+    setPIN(ticket.PIN);
+  }, [ticket]);
+
+  useEffect(() => {
+    const startTime = "09:00";
+    const endTime = "19:00";
     let date = new Date();
     let currentTime = getTime(date);
     setCurrentDate(currentTime);
-    if (currentTime < endTime && currentTime > startTime) {
+    if (currentTime <= endTime && currentTime >= startTime) {
       setModalVisible(false);
       setModalText("");
     } else {
       setModalVisible(true);
+      setPIN("");
       setModalText(
         "FastRider tickets can not be assign outside of park working hours. \n\n Please try between 09:00-19:00."
       );
@@ -72,6 +77,7 @@ export default function MainComp() {
     let hour = time.getHours();
     let minutes = time.getMinutes();
     minutes = minutes < 10 ? "0" + minutes : minutes;
+    hour = hour < 10 ? "0" + hour : hour;
     let returnTime = hour + ":" + minutes;
     return returnTime;
   };
@@ -85,12 +91,10 @@ export default function MainComp() {
       try {
         setInvalidPinMsg("");
         let checkIfPinIsValid = checkPINnumber(PIN);
-        console.log(PIN, ride);
         if (checkIfPinIsValid) {
-          const found = users.users.find((user) => user.PIN === PIN);
-          console.log("find", found);
-          if (found) {
-            let returnTimeTicket = getTime(found.ticket.ride.return_time);
+          const findPin = users.users.find((user) => user.PIN === PIN);
+          if (findPin) {
+            let returnTimeTicket = getTime(findPin.ticket.ride.return_time);
             if (currentDate < returnTimeTicket) {
               setModalText(
                 "Only one FastRider ticket can be held at any given time.\n\n Please try after your ride at " +
@@ -99,22 +103,22 @@ export default function MainComp() {
               setModalVisible(true);
               setCantAssignModal(true);
             }
+          } else {
+            let rideDetails = {
+              pin: PIN,
+              ride_id: ride.id,
+              token: "433898df4a3e992b8411004109e4d574a90695e39e",
+            };
+            let resp = await axios.post(
+              "http://fast-rider.herokuapp.com/api/v1/tickets?api_key=/v1/rides",
+              rideDetails
+            );
+
+            dispatch(FastRiderAccessCode(resp.data, PIN));
+            setShowConfirmation(true);
+            // setPIN("");
+            setShowSubmit(false);
           }
-
-          let rideDetails = {
-            pin: PIN,
-            ride_id: ride.id,
-            token: "433898df4a3e992b8411004109e4d574a90695e39e",
-          };
-          let resp = await axios.post(
-            "http://fast-rider.herokuapp.com/api/v1/tickets?api_key=/v1/rides",
-            rideDetails
-          );
-
-          dispatch(FastRiderAccessCode(resp.data, PIN));
-          setShowConfirmation(true);
-          setPIN("");
-          setShowSubmit(false);
         } else {
           setInvalidPinMsg("Invalid park ticket PIN number");
         }
@@ -282,6 +286,7 @@ export default function MainComp() {
                   placeholder="#PIN"
                   value={PIN}
                   onChangeText={(text) => setPIN(text)}
+                  autoCapitalize="characters"
                 />
 
                 {screenWidth > 900 && (
@@ -312,7 +317,7 @@ export default function MainComp() {
               <RidesComp />
             </View>
             {ShowSubmit && screenWidth < 900 && (
-              <View style={[styles.SubmitButton]}>
+              <View style={styles.SubmitButton}>
                 <Pressable style={styles.button} onPress={getAccessCode}>
                   <Text style={styles.ButtonInputText}>SUBMIT</Text>
                 </Pressable>
@@ -449,7 +454,7 @@ const styles = StyleSheet.create({
   },
   RidesWeb: {
     position: "absolute",
-    top: "70%",
+    top: "65%",
     width: "50%",
     left: "25%",
   },
