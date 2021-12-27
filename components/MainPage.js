@@ -354,7 +354,6 @@ const styles = StyleSheet.create({
     position: "absolute",
     alignItems: "center",
     alignContent: "center",
-    top: "3%",
     width: "100%",
   },
   InstructionsContainerWeb: {
@@ -415,7 +414,7 @@ const styles = StyleSheet.create({
   },
   SubmitButton: {
     position: "absolute",
-    top: "30.5%",
+    top: "21%",
     alignContent: "center",
     width: "100%",
     borderColor: "gray",
@@ -452,7 +451,7 @@ const styles = StyleSheet.create({
   },
   Rides: {
     position: "absolute",
-    top: "24%",
+    top: "20.5%",
   },
   RidesWeb: {
     position: "absolute",
