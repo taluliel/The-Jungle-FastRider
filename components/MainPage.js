@@ -42,10 +42,14 @@ export default function MainComp() {
 
   useEffect(() => {
     async function fetchData() {
-      let resp = await axios.get(
-        "http://fast-rider.herokuapp.com/api/v1/rides?token=433898df4a3e992b8411004109e4d574a90695e39e&api_key=/v1/rides"
-      );
-      dispatch(setRides(resp.data));
+      try {
+        let resp = await axios.get(
+          "http://fast-rider.herokuapp.com/api/v1/rides?token=433898df4a3e992b8411004109e4d574a90695e39e&api_key=/v1/rides"
+        );
+        dispatch(setRides(resp.data));
+      } catch (err) {
+        console.log(err);
+      }
     }
     fetchData();
   }, []);
@@ -311,7 +315,6 @@ export default function MainComp() {
                 )}
               </View>
             </View>
-
             <View style={screenWidth > 900 ? styles.RidesWeb : styles.Rides}>
               <RidesComp />
             </View>
