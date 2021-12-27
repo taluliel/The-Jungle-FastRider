@@ -50,9 +50,9 @@ export default function MainComp() {
     fetchData();
   }, []);
 
-  //   useEffect(() => {
-  //     setPIN(ticket.PIN);
-  //   }, [ticket]);
+  // useEffect(() => {
+  //   setPIN(ticket.PIN);
+  // }, [ticket]);
 
   useEffect(() => {
     const startTime = "09:00";
@@ -286,7 +286,6 @@ export default function MainComp() {
                   placeholder="#PIN"
                   value={PIN}
                   onChangeText={(text) => setPIN(text)}
-                  autoCapitalize="characters"
                 />
 
                 {screenWidth > 900 && (
