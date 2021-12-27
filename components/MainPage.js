@@ -414,7 +414,7 @@ const styles = StyleSheet.create({
   },
   SubmitButton: {
     position: "absolute",
-    top: "21%",
+    top: "20%",
     alignContent: "center",
     width: "100%",
     borderColor: "gray",
