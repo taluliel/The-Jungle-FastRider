@@ -7,6 +7,6 @@
  FastRider tickets can not be assign outside of park working hours (09:00-19:00).
  
  Optional access code:
- JN-8080-8080-QQ
+ JN-8080-8080-QQ ,
  JN-3117-5100-LH
  
